@@ -27,6 +27,16 @@ Web app para gestión de incidentes de seguridad con MFA, RBAC y cifrado AES-256
 2. Configurar `.env` (ver `.env.example`).
 3. Ejecutar `supabase start` (backend) y `npm run dev`(frontend).
 
+## Flujo de Trabajo
+
+graph TD  
+    A[Clonar Repo] --> B[Configurar .env]  
+    B --> C[Backend: supabase start]  
+    B --> D[Frontend: npm run dev]  
+    C --> E[Probar Edge Functions]  
+    D --> F[Desarrollar componentes]  
+    E & F --> G[Integrar y revisar PRs]
+
 ## 📄 Documentación  
 - [Arquitectura](/docs/ARCHITECTURE.md)
 - [API Reference](/docs/API_REFERENCE.md)
