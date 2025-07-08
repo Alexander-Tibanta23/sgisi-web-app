@@ -29,6 +29,7 @@ Web app para gestión de incidentes de seguridad con MFA, RBAC y cifrado AES-256
 
 ## Flujo de Trabajo
 
+```mermaid
 graph TD  
     A[Clonar Repo] --> B[Configurar .env]  
     B --> C[Backend: supabase start]  
