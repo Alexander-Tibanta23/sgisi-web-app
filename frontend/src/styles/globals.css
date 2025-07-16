@@ -1,0 +1,122 @@
+/* Estilos globales para SGISI */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+/* Variables CSS para colores de GitHub */
+:root {
+  /* Colores principales - Modo claro por defecto */
+  --color-fg-default: #24292f;
+  --color-fg-muted: #656d76;
+  --color-fg-subtle: #6e7781;
+  --color-canvas-default: #ffffff;
+  --color-canvas-subtle: #f6f8fa;
+  --color-border-default: #d0d7de;
+  --color-border-muted: #d0d7de;
+  --color-neutral-muted: #f6f8fa;
+  --color-accent-fg: #0969da;
+  --color-accent-emphasis: #0969da;
+  --color-accent-muted: #0969da;
+  --color-accent-subtle: #ddf4ff;
+  --color-attention-fg: #9a6700;
+  --color-attention-emphasis: #9a6700;
+  --color-attention-muted: #9a6700;
+  --color-attention-subtle: #fff8c5;
+  --color-severe-fg: #bc4c00;
+  --color-severe-emphasis: #bc4c00;
+  --color-severe-muted: #bc4c00;
+  --color-severe-subtle: #ffebe9;
+  --color-danger-fg: #cf222e;
+  --color-danger-emphasis: #cf222e;
+  --color-danger-muted: #cf222e;
+  --color-danger-subtle: #ffebe9;
+  --color-success-fg: #116329;
+  --color-success-emphasis: #1a7f37;
+  --color-success-muted: #1a7f37;
+  --color-success-subtle: #dafbe1;
+  --color-done-fg: #8250df;
+  --color-done-emphasis: #8250df;
+  --color-done-muted: #8250df;
+  --color-done-subtle: #fbefff;
+  --color-open-fg: #1a7f37;
+  --color-open-emphasis: #1a7f37;
+  --color-open-muted: #1a7f37;
+  --color-open-subtle: #dafbe1;
+  --color-closed-fg: #cf222e;
+  --color-closed-emphasis: #cf222e;
+  --color-closed-muted: #cf222e;
+  --color-closed-subtle: #ffebe9;
+}
+
+/* Modo oscuro */
+[data-theme="dark"] {
+  --color-fg-default: #f0f6fc;
+  --color-fg-muted: #7d8590;
+  --color-fg-subtle: #6e7681;
+  --color-canvas-default: #0d1117;
+  --color-canvas-subtle: #161b22;
+  --color-border-default: #30363d;
+  --color-border-muted: #21262d;
+  --color-neutral-muted: #21262d;
+  --color-accent-fg: #58a6ff;
+  --color-accent-emphasis: #58a6ff;
+  --color-accent-muted: #58a6ff;
+  --color-accent-subtle: #1f6feb;
+  --color-attention-fg: #d29922;
+  --color-attention-emphasis: #d29922;
+  --color-attention-muted: #d29922;
+  --color-attention-subtle: #9e6a03;
+  --color-severe-fg: #db6d28;
+  --color-severe-emphasis: #db6d28;
+  --color-severe-muted: #db6d28;
+  --color-severe-subtle: #bd561d;
+  --color-danger-fg: #f85149;
+  --color-danger-emphasis: #f85149;
+  --color-danger-muted: #f85149;
+  --color-danger-subtle: #da3633;
+  --color-success-fg: #3fb950;
+  --color-success-emphasis: #3fb950;
+  --color-success-muted: #3fb950;
+  --color-success-subtle: #238636;
+  --color-done-fg: #a371f7;
+  --color-done-emphasis: #a371f7;
+  --color-done-muted: #a371f7;
+  --color-done-subtle: #8957e5;
+  --color-open-fg: #3fb950;
+  --color-open-emphasis: #3fb950;
+  --color-open-muted: #3fb950;
+  --color-open-subtle: #238636;
+  --color-closed-fg: #f85149;
+  --color-closed-emphasis: #f85149;
+  --color-closed-muted: #f85149;
+  --color-closed-subtle: #da3633;
+}
+
+/* Transiciones suaves para cambios de tema */
+* {
+  transition: background-color 0.2s ease-in-out, 
+              color 0.2s ease-in-out, 
+              border-color 0.2s ease-in-out;
+}
+
+/* Mejoras de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Estilos para el favicon */
+link[rel="icon"] {
+  transition: none;
+} 
