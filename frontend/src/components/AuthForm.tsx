@@ -1,2 +1,3 @@
 // Componente de formulario de autenticación
 // ...implementación pendiente...
+export {};
