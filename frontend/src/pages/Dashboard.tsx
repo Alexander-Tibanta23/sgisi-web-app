@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Modal, TextField, Select, MenuItem as MuiMenuItem, FormControl, InputLabel, OutlinedInput, ListItemText } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
@@ -17,8 +18,6 @@ import {
 import HomeIcon from '@mui/icons-material/Home';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import GroupIcon from '@mui/icons-material/Group';
-
-
 import { supabase } from '../utils/supabaseClient';
 
 type IncidentType = {
@@ -127,16 +126,26 @@ const Dashboard: React.FC<{ isDarkMode?: boolean; toggleTheme?: () => void }> = 
   // Modal handlers
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+
+  // Sanitization helpers
+  const sanitizeInput = (value: string) => {
+    // Whitelist: allow letters, numbers, basic punctuation, spaces
+    return value.replace(/[^\w\s.,;:!?@\-áéíóúÁÉÍÓÚñÑ]/gi, '');
+  };
+
+  // Sanitized change handler for text fields
+  const handleFormChangeSanitized = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === 'imagen' && e.target instanceof HTMLInputElement && e.target.files && e.target.files.length > 0) {
       setFormData({ ...formData, imagen: e.target.files[0], imagenUrl: URL.createObjectURL(e.target.files[0]) });
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData({ ...formData, [name]: sanitizeInput(value) });
     }
   };
-  const handleTipoChange = (event: SelectChangeEvent<string>) => {
-    setFormData({ ...formData, tipo: event.target.value });
+
+  // Sanitized change handler for tipo select
+  const handleTipoChangeSanitized = (event: SelectChangeEvent<string>) => {
+    setFormData({ ...formData, tipo: sanitizeInput(event.target.value) });
   };
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -305,7 +314,7 @@ const Dashboard: React.FC<{ isDarkMode?: boolean; toggleTheme?: () => void }> = 
                   <Select
                     name="tipo"
                     value={formData.tipo}
-                    onChange={handleTipoChange}
+                    onChange={handleTipoChangeSanitized}
                     input={<OutlinedInput label="Tipo incidente" />}
                     sx={{ color: '#f0f6fc' }}
                   >
@@ -333,25 +342,25 @@ const Dashboard: React.FC<{ isDarkMode?: boolean; toggleTheme?: () => void }> = 
               </Box>
               {/* Mostrar campo Otro si se selecciona "Otro" */}
               {formData.tipo === 'Otro' && (
-                <TextField fullWidth label="Especificar tipo incidente" name="otroTipo" value={formData.otroTipo} onChange={handleFormChange} sx={{ mb: 2 }} />
+                  <TextField fullWidth label="Especificar tipo incidente" name="otroTipo" value={formData.otroTipo} onChange={handleFormChangeSanitized} sx={{ mb: 2 }} />
               )}
-              <TextField fullWidth label="Título" name="titulo" value={formData.titulo} onChange={handleFormChange} sx={{ mb: 2 }} />
-              <TextField fullWidth label="Descripción" name="descripcion" value={formData.descripcion} onChange={handleFormChange} sx={{ mb: 2 }} multiline minRows={4} />
-              <TextField fullWidth label="Departamento" name="departamento" value={formData.departamento} onChange={handleFormChange} sx={{ mb: 2 }} />
+              <TextField fullWidth label="Título" name="titulo" value={formData.titulo} onChange={handleFormChangeSanitized} sx={{ mb: 2 }} />
+              <TextField fullWidth label="Descripción" name="descripcion" value={formData.descripcion} onChange={handleFormChangeSanitized} sx={{ mb: 2 }} multiline minRows={4} />
+              <TextField fullWidth label="Departamento" name="departamento" value={formData.departamento} onChange={handleFormChangeSanitized} sx={{ mb: 2 }} />
               <TextField
                 fullWidth
                 label="Fecha"
                 name="fecha"
                 type="date"
                 value={formData.fecha ? formData.fecha : ''}
-                onChange={e => setFormData({ ...formData, fecha: e.target.value })}
+                onChange={handleFormChangeSanitized}
                 sx={{ mb: 2 }}
                 InputLabelProps={{ shrink: true }}
               />
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                 <Button variant="outlined" component="label" sx={{ color: '#f0f6fc', borderColor: '#30363d' }}>
                   Subir imagen
-                  <input type="file" name="imagen" accept="image/*" hidden onChange={handleFormChange} />
+                  <input type="file" name="imagen" accept="image/*" hidden onChange={handleFormChangeSanitized} />
                 </Button>
                 {formData.imagenUrl && (
                   <img src={formData.imagenUrl} alt="preview" style={{ width: 80, height: 40, borderRadius: 4, objectFit: 'cover', background: '#333' }} />
