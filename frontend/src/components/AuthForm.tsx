@@ -14,7 +14,6 @@ const TIME_LIMIT = 300; // segundos
 const AuthForm: React.FC<AuthFormProps> = ({ email, userId }) => {
   const [code, setCode] = useState(Array(CODE_LENGTH).fill(''));
   const [timer, setTimer] = useState(TIME_LIMIT);
-  const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -34,7 +33,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ email, userId }) => {
         setError('Error enviando el código. Intenta de nuevo.');
       }
     })();
-    setSent(true);
     const interval = setInterval(() => {
       setTimer(t => t > 0 ? t - 1 : 0);
     }, 1000);
