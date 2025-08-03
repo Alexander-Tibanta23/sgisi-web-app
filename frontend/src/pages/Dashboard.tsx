@@ -147,12 +147,14 @@ const Dashboard: React.FC<{ isDarkMode?: boolean; toggleTheme?: () => void }> = 
   // Obtener rol y datos del usuario
   const [userRole, setUserRole] = useState('');
   const [userId, setUserId] = useState('');
+  const [userEmail, setUserEmail] = useState('');
 
   React.useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
+        setUserEmail(user.email || '');
         const { data: roleData } = await supabase.rpc('get_my_role');
         setUserRole(roleData);
       }
@@ -405,6 +407,9 @@ const Dashboard: React.FC<{ isDarkMode?: boolean; toggleTheme?: () => void }> = 
         <Box sx={{ width: '100%', px: 2, pb: 2, mt: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
           <Typography variant="body2" sx={{ color: '#f0f6fc', fontWeight: 700 }}>
             {userId ? `Usuario: ${userId}` : 'Usuario no logeado'}
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#f0f6fc', fontWeight: 700 }}>
+            {userEmail ? `Email: ${userEmail.split('@')[0]}` : ''}
           </Typography>
           <Typography variant="caption" sx={{ color: '#7d8590', fontWeight: 600 }}>
             {userRole ? `Rol: ${userRole}` : 'Rol desconocido'}
