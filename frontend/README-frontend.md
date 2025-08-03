@@ -36,6 +36,7 @@ Guía para desarrollo de la app React (Kanban, formularios, dashboards).
 - **Texto secundario**: `#7d8590` (Gris claro)
 - **Bordes**: `#30363d` (Gris oscuro)
 
+
 ### Estados y Acciones
 - **Éxito**: `#1a7f37` (Verde)
 - **Error**: `#cf222e` (Rojo)

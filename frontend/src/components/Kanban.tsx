@@ -1,3 +1,0 @@
-// Componente Kanban
-// ...implementación pendiente...
-export {};
