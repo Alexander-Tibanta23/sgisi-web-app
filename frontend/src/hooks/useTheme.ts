@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { applyColors } from '../theme';
+
 
 export const useTheme = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -13,8 +13,6 @@ export const useTheme = () => {
   });
 
   useEffect(() => {
-    // Aplicar colores CSS al documento
-    applyColors(isDarkMode);
     
     // Guardar preferencia en localStorage
     localStorage.setItem('sgisi-theme', isDarkMode ? 'dark' : 'light');
