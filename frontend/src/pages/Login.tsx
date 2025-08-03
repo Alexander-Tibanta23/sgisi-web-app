@@ -1,329 +1,96 @@
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  Box,
-  Container,
-  Typography,
-  Button,
-  Paper,
-  TextField,
-  InputAdornment,
-  IconButton,
-  useTheme,
-  useMediaQuery,
-  Alert,
-  Stack,
-} from '@mui/material';
-import { Visibility, VisibilityOff, LockOutlined, Refresh } from '@mui/icons-material';
+import React, { useState } from 'react';
+import AuthForm from '../components/AuthForm';
+import { supabase } from '../utils/supabaseClient';
 
-// Helper para validaciones
-const suspiciousPattern = /['";=]|--/;
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const codePattern = /^\d{6}$/;
 
-const MAX_USER_LENGTH = 64;
-const MAX_PASS_LENGTH = 64;
+const githubColors = {
+background: '#0d1117',
+card: '#161b22',
+border: '#30363d',
+input: '#161b22',
+primary: '#58a6ff',
+secondary: '#7d8590',
+error: '#cf222e',
+text: '#f0f6fc',
+textSecondary: '#7d8590',
+};
 
 const Login: React.FC = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  // Login state
+  const [step, setStep] = useState<'login' | 'auth'>('login');
+  const [email, setEmail] = useState('');
+  const [userId, setUserId] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ user: '', password: '' });
-  const [errors, setErrors] = useState<{ user?: string; password?: string }>({});
-  const [submitError, setSubmitError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [show2FA, setShow2FA] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
 
-  // 2FA state
-  const [code, setCode] = useState('');
-  const [codeError, setCodeError] = useState('');
-  const [codeSubmitting, setCodeSubmitting] = useState(false);
-  const [resendTimer, setResendTimer] = useState(60);
-  const resendInterval = useRef<NodeJS.Timeout | null>(null);
-
-  // Validación de campos
-  const validate = () => {
-    const newErrors: typeof errors = {};
-    const user = form.user.trim();
-    const password = form.password.trim();
-
-    if (!user) newErrors.user = 'El usuario/correo es obligatorio.';
-    else if (user.length > MAX_USER_LENGTH) newErrors.user = 'Máximo 64 caracteres.';
-    else if (suspiciousPattern.test(user)) newErrors.user = 'Caracteres no permitidos.';
-    else if (user.includes(' ')) newErrors.user = 'No debe contener espacios.';
-    else if (user.includes('@') && !emailPattern.test(user)) newErrors.user = 'Formato de correo inválido.';
-
-    if (!password) newErrors.password = 'La contraseña es obligatoria.';
-    else if (password.length > MAX_PASS_LENGTH) newErrors.password = 'Máximo 64 caracteres.';
-    else if (suspiciousPattern.test(password)) newErrors.password = 'Caracteres no permitidos.';
-    else if (password.includes(' ')) newErrors.password = 'No debe contener espacios.';
-
-    return newErrors;
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: undefined });
-    setSubmitError('');
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitError('');
-    const newErrors = validate();
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
-    setSubmitting(true);
-    try {
-      // Aquí iría la llamada a la API de login (NO almacenar password)
-      // await sgisiAPI.auth.login({ ... });
-      // Simulación de éxito
-      setTimeout(() => {
-        setSubmitting(false);
-        setShow2FA(true);
-        setResendTimer(60);
-      }, 1200);
-    } catch (err) {
-      setSubmitting(false);
-      setSubmitError('Usuario o contraseña incorrectos.');
-    }
-  };
-
-  // 2FA handlers
-  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, '');
-    setCode(val);
-    setCodeError('');
-  };
-
-  const handleCodeSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!codePattern.test(code)) {
-      setCodeError('El código debe ser de 6 números.');
+    setError('');
+    setLoading(true);
+    // Llamada a Supabase Auth
+    const { data, error: supaError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    setLoading(false);
+    if (supaError || !data.user) {
+      setError('Usuario o contraseña inválidos');
+      setShowPopup(true);
+      setTimeout(() => setShowPopup(false), 3500);
       return;
     }
-    setCodeSubmitting(true);
-    setTimeout(() => {
-      setCodeSubmitting(false);
-      // Aquí iría la verificación real del código
-      // Redirigir o mostrar éxito
-    }, 1200);
+    setUserId(data.user.id);
+    setStep('auth');
   };
 
-  // Temporizador para reenviar código
-  useEffect(() => {
-    if (!show2FA) return;
-    if (resendTimer === 0 && resendInterval.current) {
-      clearInterval(resendInterval.current);
-      resendInterval.current = null;
-      return;
-    }
-    if (resendTimer > 0 && !resendInterval.current) {
-      resendInterval.current = setInterval(() => {
-        setResendTimer((t) => {
-          if (t <= 1 && resendInterval.current) {
-            clearInterval(resendInterval.current);
-            resendInterval.current = null;
-            return 0;
-          }
-          return t - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (resendInterval.current) clearInterval(resendInterval.current);
-    };
-  }, [show2FA, resendTimer]);
-
-  const handleResend = () => {
-    setResendTimer(60);
-    setCode('');
-    setCodeError('');
-    // Aquí iría la llamada a la API para reenviar el código
-  };
-
-  return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        pt: { xs: 8, sm: 10 },
-        background: theme.palette.mode === 'dark'
-          ? 'linear-gradient(135deg, #0d1117 0%, #161b22 100%)'
-          : 'linear-gradient(135deg, #f6f8fa 0%, #eaeef2 100%)',
-        transition: 'background 0.4s',
-      }}
-    >
-      <Container
-        maxWidth={false}
-        sx={{
-          maxWidth: 480,
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          py: { xs: 8, sm: 12 },
-        }}
-      >
-        <Paper
-          elevation={6}
-          sx={{
-            p: { xs: 4, sm: 6 },
-            background: theme.palette.background.paper,
-            borderRadius: 5,
-            boxShadow: theme.palette.mode === 'dark'
-              ? '0 8px 32px 0 rgba(20,30,40,0.25)'
-              : '0 8px 32px 0 rgba(9,105,218,0.08)',
-            width: '100%',
-            mb: 4,
-            transition: 'background 0.4s',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          {!show2FA ? (
-            <>
-              <LockOutlined sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-              <Typography variant="h5" fontWeight={700} mb={2} color="text.primary">
-                Iniciar Sesión
-              </Typography>
-              <Box component="form" onSubmit={handleSubmit} autoComplete="off" sx={{ width: '100%', mt: 1 }}>
-                <TextField
-                  label="Usuario o correo electrónico"
-                  name="user"
-                  value={form.user}
-                  onChange={handleChange}
-                  variant="outlined"
-                  fullWidth
-                  required
-                  autoFocus
-                  inputProps={{
-                    maxLength: MAX_USER_LENGTH,
-                    autoComplete: 'username',
-                    spellCheck: false,
-                    'aria-label': 'Usuario o correo electrónico',
-                  }}
-                  margin="normal"
-                  error={!!errors.user}
-                  helperText={errors.user}
-                />
-                <TextField
-                  label="Contraseña"
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  variant="outlined"
-                  fullWidth
-                  required
-                  type={showPassword ? 'text' : 'password'}
-                  inputProps={{
-                    maxLength: MAX_PASS_LENGTH,
-                    autoComplete: 'off',
-                    spellCheck: false,
-                    'aria-label': 'Contraseña',
-                  }}
-                  margin="normal"
-                  error={!!errors.password}
-                  helperText={errors.password}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                          onClick={() => setShowPassword((v) => !v)}
-                          onMouseDown={(e) => e.preventDefault()}
-                          edge="end"
-                          tabIndex={-1}
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-                {submitError && (
-                  <Alert severity="error" sx={{ mt: 2 }}>
-                    {submitError}
-                  </Alert>
-                )}
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  fullWidth
-                  size="large"
-                  sx={{ mt: 3, fontWeight: 700, py: 1.5, borderRadius: 2, fontSize: '1.1rem' }}
-                  disabled={submitting}
-                >
-                  {submitting ? 'Ingresando...' : 'Ingresar'}
-                </Button>
-              </Box>
-            </>
-          ) : (
-            <>
-              <LockOutlined sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-              <Typography variant="h5" fontWeight={700} mb={2} color="text.primary">
-                Verificación en dos pasos
-              </Typography>
-              <Typography variant="body2" color="text.secondary" mb={2}>
-                Ingresa el código de 6 dígitos enviado a tu correo o app de autenticación.
-              </Typography>
-              <Box component="form" onSubmit={handleCodeSubmit} autoComplete="off" sx={{ width: '100%' }}>
-                <TextField
-                  label="Código de verificación"
-                  name="code"
-                  value={code}
-                  onChange={handleCodeChange}
-                  variant="outlined"
-                  fullWidth
-                  required
-                  autoFocus
-                  inputProps={{
-                    maxLength: 6,
-                    inputMode: 'numeric',
-                    pattern: '\\d{6}',
-                    autoComplete: 'one-time-code',
-                    'aria-label': 'Código de verificación',
-                  }}
-                  margin="normal"
-                  error={!!codeError}
-                  helperText={codeError || ' '}
-                />
-                <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" sx={{ mt: 1 }}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                    fullWidth
-                    size="large"
-                    sx={{ fontWeight: 700, py: 1.2, borderRadius: 2, fontSize: '1.1rem' }}
-                    disabled={codeSubmitting}
-                  >
-                    {codeSubmitting ? 'Verificando...' : 'Verificar'}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    startIcon={<Refresh />}
-                    onClick={handleResend}
-                    disabled={resendTimer > 0}
-                    sx={{ minWidth: 140, ml: 2, fontWeight: 600 }}
-                  >
-                    {resendTimer > 0 ? `Reenviar (${resendTimer}s)` : 'Reenviar código'}
-                  </Button>
-                </Stack>
-              </Box>
-            </>
-          )}
-        </Paper>
-      </Container>
-    </Box>
+  return step === 'login' ? (
+    <div style={{ minHeight: '100vh', background: githubColors.background, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <form onSubmit={handleLogin} style={{ maxWidth: 400, width: '100%', background: githubColors.card, border: `1.5px solid ${githubColors.border}`, borderRadius: 12, boxShadow: '0 4px 24px 0 rgba(0,0,0,0.12)', padding: 32, color: githubColors.text }}>
+        <h2 style={{ color: githubColors.primary, marginBottom: 24, fontWeight: 700, fontSize: '1.7rem', textAlign: 'center', letterSpacing: '-0.03em' }}>Iniciar sesión en SGISI</h2>
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', marginBottom: 8, color: githubColors.text, fontWeight: 600 }}>Correo electrónico</label>
+          <input type="email" required placeholder="Correo" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%', padding: 12, borderRadius: 8, border: `1.5px solid ${githubColors.border}`, background: githubColors.input, color: githubColors.text, fontSize: '1rem', outline: 'none', marginBottom: 2 }} />
+        </div>
+        <div style={{ marginBottom: 20, position: 'relative' }}>
+          <label style={{ display: 'block', marginBottom: 8, color: githubColors.text, fontWeight: 600 }}>Contraseña</label>
+          <input
+            type={showPassword ? 'text' : 'password'}
+            required
+            placeholder="Contraseña"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            style={{ width: '100%', padding: 12, borderRadius: 8, border: `1.5px solid ${githubColors.border}`, background: githubColors.input, color: githubColors.text, fontSize: '1rem', outline: 'none', marginBottom: 2, paddingRight: 44 }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(v => !v)}
+            style={{ position: 'absolute', right: 12, top: 38, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            tabIndex={-1}
+            aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+          >
+            {showPassword ? (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 5c-7 0-9 7-9 7s2 7 9 7 9-7 9-7-2-7-9-7zm0 12c-4.418 0-7.364-3.053-8.484-5C4.636 8.053 7.582 5 12 5s7.364 3.053 8.484 5c-1.12 1.947-4.066 5-8.484 5zm0-9a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" fill="#c9d1d9"/></svg>
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 5c-7 0-9 7-9 7s2 7 9 7c1.93 0 3.68-.39 5.13-1.07l1.57 1.57a1 1 0 0 0 1.41-1.41l-16-16a1 1 0 0 0-1.41 1.41l2.13 2.13C4.636 8.053 7.582 5 12 5c2.21 0 4.21.72 5.87 1.93l1.43 1.43A1 1 0 0 0 20.71 7.7l-1.43-1.43C17.21 5.72 15.21 5 12 5zm0 12c-4.418 0-7.364-3.053-8.484-5C4.636 8.053 7.582 5 12 5c2.21 0 4.21.72 5.87 1.93l1.43 1.43A1 1 0 0 0 20.71 7.7l-1.43-1.43C17.21 5.72 15.21 5 12 5zm0-9a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" fill="#c9d1d9"/></svg>
+            )}
+          </button>
+        </div>
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: 14, borderRadius: 8, background: githubColors.primary, color: '#fff', fontWeight: 700, fontSize: '1.1rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, marginTop: 8 }}>
+          {loading ? 'Verificando...' : 'Iniciar sesión'}
+        </button>
+        {error && <div style={{ color: githubColors.error, marginTop: 18, textAlign: 'center', fontWeight: 600 }}>{error}</div>}
+        {showPopup && (
+          <div style={{ position: 'fixed', top: 32, left: '50%', transform: 'translateX(-50%)', background: githubColors.error, color: '#fff', padding: '12px 32px', borderRadius: 8, fontWeight: 700, fontSize: '1.1rem', boxShadow: '0 2px 12px rgba(0,0,0,0.18)', zIndex: 9999 }}>
+            Usuario o contraseña inválidos
+          </div>
+        )}
+      </form>
+    </div>
+  ) : (
+    <AuthForm email={email} userId={userId} />
   );
 };
 
-export default Login; 
+export default Login;
