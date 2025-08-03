@@ -18,42 +18,22 @@ import HomeIcon from '@mui/icons-material/Home';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import GroupIcon from '@mui/icons-material/Group';
 
-// Mock data for Kanban cards
-const incidentes = [
-  {
-    id: 1,
-    tipo: ['Malware/Virus'],
-    severidad: 'Alto',
-    titulo: 'Usabilidad Testing',
-    descripcion: 'Malware detectado en estación de trabajo.',
-    ubicacion: 'TI',
-    fecha: '2025-08-02 09:30',
-    imagen: 'https://placehold.co/80x40',
-    estado: 'A analizar',
-  },
-  {
-    id: 2,
-    tipo: ['Acceso no autorizado'],
-    severidad: 'Medio',
-    titulo: 'Acceso no autorizado',
-    descripcion: 'Intento de acceso no autorizado detectado.',
-    ubicacion: 'Seguridad',
-    fecha: '2025-08-01 15:10',
-    imagen: 'https://placehold.co/80x40',
-    estado: 'En revisión',
-  },
-  {
-    id: 3,
-    tipo: ['Fuga de datos'],
-    severidad: 'Bajo',
-    titulo: 'Fuga de datos',
-    descripcion: 'Posible fuga de datos en departamento legal.',
-    ubicacion: 'Legal',
-    fecha: '2025-07-30 11:00',
-    imagen: 'https://placehold.co/80x40',
-    estado: 'Completado',
-  },
-];
+
+import { supabase } from '../utils/supabaseClient';
+
+type IncidentType = {
+  id: string;
+  titulo: string;
+  activo_afectado: string;
+  tipo: string;
+  responsable: string;
+  evidencia: string;
+  dueño: string;
+  estado: string;
+  descripcion: string;
+  nivel: string;
+  team: string;
+};
 
 const estados = ['A analizar', 'En revisión', 'Completado'];
 const severidades = ['Alto', 'Medio', 'Bajo'];
@@ -78,6 +58,10 @@ const colorSeveridad: Record<string, string> = {
   'Medio': '#f59e42',
   'Bajo': '#22d3ee',
 };
+
+// ...existing code...
+
+// ...existing code...
 
 const Dashboard: React.FC<{ isDarkMode?: boolean; toggleTheme?: () => void }> = ({ isDarkMode, toggleTheme }) => {
   // Sidebar navigation
@@ -127,17 +111,17 @@ const Dashboard: React.FC<{ isDarkMode?: boolean; toggleTheme?: () => void }> = 
   const handleSeveridadClose = () => setAnchorSeveridad(null);
 
   // Card state for moving between columns
-  const [incidentesState, setIncidentesState] = useState(incidentes);
+  const [incidentesState, setIncidentesState] = useState<IncidentType[]>([]);
   // Card filtering
   const filteredIncidentes = incidentesState.filter(
-    (inc) =>
+    (inc: IncidentType) =>
       filtroEstado.includes(inc.estado) &&
-      filtroSeveridad.includes(inc.severidad) &&
-      inc.tipo.some((t) => tiposIncidente.includes(t))
+      filtroSeveridad.includes(inc.nivel) &&
+      tiposIncidente.includes(inc.tipo)
   );
   // Move card handler
-  const handleMoveCard = (id: number, newEstado: string) => {
-    setIncidentesState(prev => prev.map(inc => inc.id === id ? { ...inc, estado: newEstado } : inc));
+  const handleMoveCard = (id: string, newEstado: string) => {
+    setIncidentesState((prev: IncidentType[]) => prev.map((inc: IncidentType) => inc.id === id ? { ...inc, estado: newEstado } : inc));
   };
 
   // Modal handlers
@@ -159,6 +143,38 @@ const Dashboard: React.FC<{ isDarkMode?: boolean; toggleTheme?: () => void }> = 
     // Aquí iría la lógica para crear el incidente
     handleCloseModal();
   };
+
+  // Obtener rol y datos del usuario
+  const [userRole, setUserRole] = useState('');
+  const [userId, setUserId] = useState('');
+
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+        const { data: roleData } = await supabase.rpc('get_my_role');
+        setUserRole(roleData);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  React.useEffect(() => {
+    const fetchIncidentes = async () => {
+      let query = supabase.from('incidentes').select('*');
+      if (userRole === 'Jefe de seguridad') {
+        // No filter, get all
+      } else if (userRole === 'Analista') {
+        query = query.or(`team.eq.${userId},responsable.eq.${userId}`);
+      } else {
+        query = query.eq('dueño', userId);
+      }
+      const { data } = await query;
+      setIncidentesState(data || []);
+    };
+    if (userRole && userId) fetchIncidentes();
+  }, [userRole, userId]);
 
   return (
     <Box sx={{ width: '100vw', height: '100vh', display: 'flex', backgroundColor: 'background.default', overflow: 'hidden' }}>
@@ -215,45 +231,60 @@ const Dashboard: React.FC<{ isDarkMode?: boolean; toggleTheme?: () => void }> = 
                 </Box>
                 {/* Cards */}
                 {filteredIncidentes.filter(i => i.estado === estado).map((inc) => (
-                  <Box key={inc.id} sx={{
-                    background: '#161b22',
-                    borderRadius: 2,
-                    p: 2,
-                    mb: 1,
-                    boxShadow: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                    border: `2px solid ${colorEstado[estado]}`,
-                  }}>
+                  <Box
+                    key={inc.id}
+                    sx={{
+                      background: '#161b22',
+                      borderRadius: 2,
+                      p: 2,
+                      mb: 1,
+                      boxShadow: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1,
+                      border: `2px solid ${colorEstado[estado]}`,
+                      position: 'relative',
+                    }}
+                    onContextMenu={e => {
+                      e.preventDefault();
+                      // Mostrar menú contextual para editar/asignar responsable
+                      // Implementar lógica de menú contextual aquí
+                      // Puedes usar un estado para mostrar el menú y guardar el incidente seleccionado
+                    }}
+                  >
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
                       <Box sx={{ display: 'flex', gap: 1 }}>
-                        {inc.tipo.map((tipo) => (
-                          <Typography key={tipo} variant="caption" sx={{ background: '#21262d', color: '#f0f6fc', px: 1, py: 0.5, borderRadius: 1, fontWeight: 600 }}>{tipo}</Typography>
-                        ))}
+                        <Typography variant="caption" sx={{ background: '#21262d', color: '#f0f6fc', px: 1, py: 0.5, borderRadius: 1, fontWeight: 600 }}>{inc.tipo}</Typography>
                       </Box>
-                      <Typography variant="caption" sx={{ background: colorSeveridad[inc.severidad], color: '#fff', px: 1.5, py: 0.5, borderRadius: 1, fontWeight: 700 }}>{inc.severidad}</Typography>
+                      <Typography variant="caption" sx={{ background: colorSeveridad[inc.nivel], color: '#fff', px: 1.5, py: 0.5, borderRadius: 1, fontWeight: 700 }}>{inc.nivel}</Typography>
                     </Box>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#f0f6fc', mb: 0.5 }}>{inc.titulo}</Typography>
                     <Typography variant="body2" sx={{ color: '#7d8590', mb: 0.5 }}>{inc.descripcion}</Typography>
-                    <Typography variant="caption" sx={{ color: '#7d8590', mb: 0.5 }}>Ubicación: {inc.ubicacion}</Typography>
-                    <Typography variant="caption" sx={{ color: '#7d8590', mb: 0.5 }}>Fecha detección: {inc.fecha}</Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-                      <img src={inc.imagen} alt="referencial" style={{ borderRadius: 4, width: 80, height: 40, objectFit: 'cover', background: '#333' }} />
-                    </Box>
-                    {/* Move card buttons */}
-                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                      {colIdx > 0 && (
-                        <Button size="small" variant="outlined" sx={{ color: colorEstado[estados[colIdx-1]], borderColor: colorEstado[estados[colIdx-1]] }} onClick={() => handleMoveCard(inc.id, estados[colIdx-1])}>
-                          ← {estados[colIdx-1]}
-                        </Button>
-                      )}
-                      {colIdx < estados.length - 1 && (
-                        <Button size="small" variant="outlined" sx={{ color: colorEstado[estados[colIdx+1]], borderColor: colorEstado[estados[colIdx+1]] }} onClick={() => handleMoveCard(inc.id, estados[colIdx+1])}>
-                          {estados[colIdx+1]} →
-                        </Button>
-                      )}
-                    </Box>
+                    <Typography variant="caption" sx={{ color: '#7d8590', mb: 0.5 }}>Activo afectado: {inc.activo_afectado}</Typography>
+                    <Typography variant="caption" sx={{ color: '#7d8590', mb: 0.5 }}>Evidencia: {inc.evidencia}</Typography>
+                    <Typography variant="caption" sx={{ color: '#7d8590', mb: 0.5 }}>Dueño: {inc.dueño}</Typography>
+                    <Typography variant="caption" sx={{ color: '#7d8590', mb: 0.5 }}>Estado: {inc.estado}</Typography>
+                    <Typography variant="caption" sx={{ color: '#7d8590', mb: 0.5 }}>Nivel: {inc.nivel}</Typography>
+                    <Typography variant="caption" sx={{ color: '#7d8590', mb: 0.5 }}>Equipo: {inc.team}</Typography>
+                    {/* Mostrar responsable solo para CISO */}
+                    {userRole === 'Jefe de seguridad' && (
+                      <Typography variant="caption" sx={{ color: '#7d8590', mb: 0.5 }}>Responsable: {inc.responsable}</Typography>
+                    )}
+                    {/* Move card buttons solo para CISO y Analista */}
+                    {(userRole === 'Jefe de seguridad' || userRole === 'Analista') && (
+                      <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                        {colIdx > 0 && (
+                          <Button size="small" variant="outlined" sx={{ color: colorEstado[estados[colIdx-1]], borderColor: colorEstado[estados[colIdx-1]] }} onClick={() => handleMoveCard(inc.id, estados[colIdx-1])}>
+                            ← {estados[colIdx-1]}
+                          </Button>
+                        )}
+                        {colIdx < estados.length - 1 && (
+                          <Button size="small" variant="outlined" sx={{ color: colorEstado[estados[colIdx+1]], borderColor: colorEstado[estados[colIdx+1]] }} onClick={() => handleMoveCard(inc.id, estados[colIdx+1])}>
+                            {estados[colIdx+1]} →
+                          </Button>
+                        )}
+                      </Box>
+                    )}
                   </Box>
                 ))}
               </Box>
@@ -370,9 +401,29 @@ const Dashboard: React.FC<{ isDarkMode?: boolean; toggleTheme?: () => void }> = 
         <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
           <Divider sx={{ width: '60%', mb: 1, background: '#30363d' }} />
         </Box>
+        {/* User info and logout at bottom */}
+        <Box sx={{ width: '100%', px: 2, pb: 2, mt: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <Typography variant="body2" sx={{ color: '#f0f6fc', fontWeight: 700 }}>
+            {userId ? `Usuario: ${userId}` : 'Usuario no logeado'}
+          </Typography>
+          <Typography variant="caption" sx={{ color: '#7d8590', fontWeight: 600 }}>
+            {userRole ? `Rol: ${userRole}` : 'Rol desconocido'}
+          </Typography>
+          <Button
+            variant="outlined"
+            color="error"
+            sx={{ mt: 1, color: '#ef4444', borderColor: '#ef4444', fontWeight: 700 }}
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.href = '/';
+            }}
+          >
+            Logout
+          </Button>
+        </Box>
       </Drawer>
     </Box>
   );
-};
+}
 
 export default Dashboard;

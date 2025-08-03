@@ -1,9 +1,18 @@
 {
   "dependencies": {
     "@mui/x-date-pickers": "^8.9.2",
+    "@supabase/supabase-js": "^2.53.0",
     "@types/yup": "^0.29.14",
+    "body-parser": "^2.2.0",
+    "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "formik": "^2.4.6",
+    "nodemailer": "^7.0.5",
     "yup": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2"
   }
 }
