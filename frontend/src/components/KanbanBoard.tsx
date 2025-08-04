@@ -230,7 +230,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ incidentes, onIncidentsUpdate
       // First, let's check if the user exists in the profiles table
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, rol')
+        .select('id, role')
         .eq('id', userId)
         .single();
 
