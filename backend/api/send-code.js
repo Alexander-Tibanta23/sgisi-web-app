@@ -2,7 +2,7 @@
 // Endpoint para enviar código de autenticación por correo usando Gmail y Nodemailer
 
 const nodemailer = require('nodemailer');
-require('dotenv').config();
+require('dotenv').config({ path: './migrations/.env' });
 
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
