@@ -159,7 +159,7 @@ const IncidentAssignment: React.FC = () => {
         
         return {
           ...incident,
-          responsable_profile: responsableProfile
+          responsable_profile: responsableProfile && responsableProfile.nombre ? responsableProfile : null
         };
       });
 
@@ -169,7 +169,11 @@ const IncidentAssignment: React.FC = () => {
       setDebugInfo({
         incidentsCount: incidentsData?.length || 0,
         profilesCount: profilesData?.length || 0,
-        teamsCount: teamsData?.length || 0
+        teamsCount: teamsData?.length || 0,
+        sampleIncident: incidentsData?.[0] || null,
+        sampleProfile: profilesData?.[0] || null,
+        sampleTeam: teamsData?.[0] || null,
+        incidentsWithProfilesCount: incidentsWithProfiles.length
       });
 
     } catch (err) {
@@ -221,11 +225,7 @@ const IncidentAssignment: React.FC = () => {
         .from('incidentes')
         .update(updateData)
         .eq('id', selectedIncident.id)
-        .select(`
-          *,
-          responsable_profile:profiles(id, nombre, role, team),
-          team_profile:team(id, nombre)
-        `);
+        .select();
 
       if (error) {
         console.error('Error updating incident:', error);
@@ -235,10 +235,8 @@ const IncidentAssignment: React.FC = () => {
 
       console.log('Assignment successful:', data);
 
-      // Update local state
-      setIncidents(prev => prev.map(inc => 
-        inc.id === selectedIncident.id ? { ...inc, ...updateData } : inc
-      ));
+      // Refresh data to get updated relationships
+      await fetchData();
 
       setAssignDialogOpen(false);
       setSelectedIncident(null);
@@ -265,12 +263,16 @@ const IncidentAssignment: React.FC = () => {
   // Filter incidents
   const filteredIncidents = incidents.filter(incident => {
     const matchesEstado = !filterEstado || incident.estado === filterEstado;
-    const matchesResponsable = !filterResponsable || incident.responsable === filterResponsable;
-    const matchesTeam = !filterTeam || incident.team === filterTeam;
+    const matchesResponsable = !filterResponsable || 
+      (filterResponsable === 'null' && !incident.responsable) ||
+      incident.responsable === filterResponsable;
+    const matchesTeam = !filterTeam || 
+      (filterTeam === 'null' && !incident.team) ||
+      incident.team === filterTeam;
     const matchesSearch = !searchTerm || 
-      incident.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incident.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      incident.tipo.toLowerCase().includes(searchTerm.toLowerCase());
+      incident.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      incident.descripcion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      incident.tipo?.toLowerCase().includes(searchTerm.toLowerCase());
 
     return matchesEstado && matchesResponsable && matchesTeam && matchesSearch;
   });
@@ -592,26 +594,26 @@ const IncidentAssignment: React.FC = () => {
                       <TableCell>
                         <Box>
                           <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                            {incident.titulo}
+                            {incident.titulo || 'Sin título'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {incident.activo_afectado}
+                            {incident.activo_afectado || 'No especificado'}
                           </Typography>
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Chip label={incident.tipo} size="small" variant="outlined" />
+                        <Chip label={incident.tipo || 'Sin tipo'} size="small" variant="outlined" />
                       </TableCell>
                       <TableCell>
                         <Chip 
-                          label={incident.nivel} 
+                          label={incident.nivel || 'Sin nivel'} 
                           size="small" 
                           color={getSeverityColor(incident.nivel) as any}
                         />
                       </TableCell>
                       <TableCell>
                         <Chip 
-                          label={incident.estado} 
+                          label={incident.estado || 'Sin estado'} 
                           size="small" 
                           color={getStatusColor(incident.estado) as any}
                         />
@@ -627,10 +629,10 @@ const IncidentAssignment: React.FC = () => {
                         </Box>
                       </TableCell>
                       <TableCell>
-                        {incident.responsable_profile ? (
+                        {incident.responsable_profile && incident.responsable_profile.nombre ? (
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Avatar sx={{ width: 24, height: 24, mr: 1, fontSize: '0.75rem', bgcolor: 'primary.main' }}>
-                              {incident.responsable_profile.nombre.charAt(0)}
+                              {incident.responsable_profile.nombre.charAt(0).toUpperCase()}
                             </Avatar>
                             <Typography variant="caption">
                               {incident.responsable_profile.nombre}
@@ -641,7 +643,7 @@ const IncidentAssignment: React.FC = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        {incident.team_profile ? (
+                        {incident.team_profile && incident.team_profile.nombre ? (
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <GroupIcon sx={{ width: 16, height: 16, mr: 1, color: 'primary.main' }} />
                             <Typography variant="caption">
