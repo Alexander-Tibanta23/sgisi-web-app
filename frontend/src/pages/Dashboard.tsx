@@ -13,9 +13,13 @@ import HomeIcon from '@mui/icons-material/Home';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import GroupIcon from '@mui/icons-material/Group';
 import BugReportIcon from '@mui/icons-material/BugReport';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import { supabase } from '../utils/supabaseClient';
 import { useUser } from '../contexts/UserContext';
 import Teams from './Teams';
+import IncidentAssignment from './IncidentAssignment';
+import UserManagement from './UserManagement';
 import DatabaseTester from '../components/DatabaseTester';
 import KanbanBoard from '../components/KanbanBoard';
 import debugDatabase from '../utils/debugDatabase';
@@ -88,6 +92,18 @@ const Dashboard: React.FC<{ isDarkMode?: boolean; toggleTheme?: () => void }> = 
             <Teams />
           </Box>
         );
+      case 'assignment':
+        return (
+          <Box sx={{ flex: 1, overflow: 'auto', background: '#f5f5f5', p: 3 }}>
+            <IncidentAssignment />
+          </Box>
+        );
+      case 'users':
+        return (
+          <Box sx={{ flex: 1, overflow: 'auto', background: '#f5f5f5', p: 3 }}>
+            <UserManagement />
+          </Box>
+        );
       case 'debug':
         return (
           <Box sx={{ flex: 1, overflow: 'auto', background: '#f5f5f5', p: 3 }}>
@@ -157,6 +173,18 @@ const Dashboard: React.FC<{ isDarkMode?: boolean; toggleTheme?: () => void }> = 
               <ListItemIcon sx={{ minWidth: 0, mr: 1 }}><GroupIcon sx={{ color: selectedMenu === 'teams' ? '#22c55e' : '#58a6ff' }} /></ListItemIcon>
               <Typography variant="caption" sx={{ color: '#7d8590', fontWeight: 600 }}>Teams</Typography>
             </ListItem>
+            {userRole === 'Jefe de seguridad' && (
+              <ListItem button selected={selectedMenu === 'assignment'} onClick={() => setSelectedMenu('assignment')} sx={{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', py: 1, px: 2, gap: 1 }}>
+                <ListItemIcon sx={{ minWidth: 0, mr: 1 }}><AssignmentIcon sx={{ color: selectedMenu === 'assignment' ? '#8b5cf6' : '#58a6ff' }} /></ListItemIcon>
+                <Typography variant="caption" sx={{ color: '#7d8590', fontWeight: 600 }}>Asignaciones</Typography>
+              </ListItem>
+            )}
+            {userRole === 'Jefe de seguridad' && (
+              <ListItem button selected={selectedMenu === 'users'} onClick={() => setSelectedMenu('users')} sx={{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', py: 1, px: 2, gap: 1 }}>
+                <ListItemIcon sx={{ minWidth: 0, mr: 1 }}><ManageAccountsIcon sx={{ color: selectedMenu === 'users' ? '#f59e0b' : '#58a6ff' }} /></ListItemIcon>
+                <Typography variant="caption" sx={{ color: '#7d8590', fontWeight: 600 }}>Usuarios</Typography>
+              </ListItem>
+            )}
             <ListItem button selected={selectedMenu === 'debug'} onClick={() => setSelectedMenu('debug')} sx={{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', py: 1, px: 2, gap: 1 }}>
               <ListItemIcon sx={{ minWidth: 0, mr: 1 }}><BugReportIcon sx={{ color: selectedMenu === 'debug' ? '#ff6b6b' : '#58a6ff' }} /></ListItemIcon>
               <Typography variant="caption" sx={{ color: '#7d8590', fontWeight: 600 }}>Debug</Typography>
